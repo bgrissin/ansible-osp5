@@ -1,0 +1,40 @@
+---
+- name: install nova packages
+  yum: pkg={{ item }} state=present
+  with_items:
+    - openstack-nova-console
+    - openstack-nova-novncproxy
+    - openstack-utils
+    - openstack-nova-api
+    - openstack-nova-conductor
+    - openstack-nova-scheduler
+    - python-cinderclient
+    - python-memcached
+  tags: nova
+
+- name: run dbsync for nova
+  shell: runuser nova -s /bin/sh -c '/usr/bin/nova-manage db sync'
+  run_once: true
+  tags: nova
+
+- name: disable nova services
+  service: name={{ item }} enabled=no
+  with_items:
+    - openstack-nova-consoleauth
+    - openstack-nova-novncproxy
+    - openstack-nova-api
+    - openstack-nova-scheduler
+    - openstack-nova-conductor
+  tags: nova
+
+- include: rhel7-icehouse-cluster-resources.yml
+  when: openstack_release == 'icehouse' and ansible_distribution_major_version|int == 7
+  tags: nova
+
+- include: rhel6-icehouse-cluster-resources.yml
+  when: openstack_release == 'icehouse' and ansible_distribution_major_version|int == 6
+  tags: nova
+
+- include: rhel6-havana-cluster-resources.yml
+  when: openstack_release == 'havana' and ansible_distribution_major_version|int == 6
+  tags: nova
